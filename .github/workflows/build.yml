@@ -15,11 +15,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Dependencies & Sync Capacitor
+      - name: Install Dependencies
         run: |
           npm install
+          chmod -R +x node_modules/.bin/
           npx cap add ios || true
           npx cap sync ios
 
