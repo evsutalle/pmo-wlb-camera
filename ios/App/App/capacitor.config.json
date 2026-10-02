@@ -1,0 +1,7 @@
+{
+	"appId": "com.pmowlb.camera",
+	"appName": "PMO WLB Camera",
+	"webDir": "www",
+	"bundledWebRuntime": false,
+	"packageClassList": []
+}
