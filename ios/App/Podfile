@@ -1,0 +1,9 @@
+platform :ios, '13.0'
+use_frameworks!
+
+# target 'App' configuration for Capacitor
+target 'App' do
+  capacitor_pods
+  # pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
+  # pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
+end
