@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PMO-WLB Camera</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: default;
+        }
+
+        html, body {
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        @keyframes shutterFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.95; }
+            100% { opacity: 0; }
+        }
+
+        .shutter-effect {
+            animation: shutterFlash 0.25s ease-out;
+        }
+
+        #cameraFeed {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-button {
+            background: rgba(39, 39, 42, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .glass-button:active {
+            transform: scale(0.94);
+            background: rgba(63, 63, 70, 0.9);
+        }
+
+        /* Active highlight ring for color picker */
+        .color-btn.active-color {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 12px rgba(251, 191, 36, 0.6);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 flex flex-col h-[100dvh] w-screen overflow-hidden antialiased">
+
+    <!-- Header Controls -->
+    <header class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel border-b-0 rounded-b-2xl shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" id="cameraStatusDot"></div>
+            <span class="text-xs font-semibold uppercase tracking-widest text-zinc-300">PMO-WLB Cam</span>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button id="styleSettingsBtn" class="glass-button p-2.5 rounded-full text-zinc-200 hover:text-white transition-all" aria-label="Overlay Settings">
+                <i data-lucide="sliders" class="w-5 h-5"></i>
+            </button>
+            <button id="switchCameraBtn" class="glass-button p-2.5 rounded-full text-zinc-200 hover:text-white transition-all" aria-label="Switch Camera">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Camera Viewport Section -->
+    <main class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
+        <video id="cameraFeed" autoplay playsinline muted class="w-full h-full object-cover transition-transform duration-300"></video>
+
+        <div id="shutterOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-30"></div>
+
+        <!-- Live Badge Overlay (Auto-sizing inline container) -->
+        <div id="liveOverlayBadge" class="absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw]">
+            <div class="inline-flex flex-col items-center justify-center text-center px-4 py-2 rounded-xl bg-black/65 backdrop-blur-md border border-white/20 shadow-2xl transition-all" id="badgeContainer">
+                <span id="badgeTag" class="text-amber-400 font-extrabold uppercase tracking-wider drop-shadow whitespace-nowrap leading-tight" style="font-size: 16px;">PMO-WLB</span>
+                <span id="badgeCategory" class="font-bold text-zinc-200 tracking-wide uppercase mt-0.5 whitespace-nowrap leading-tight" style="font-size: 12px;">BIOMETRIC</span>
+                <span id="badgeTimestamp" class="font-medium text-zinc-300 tracking-tight mt-0.5 whitespace-nowrap leading-tight" style="font-size: 11px;">2026-10-02 13:54:14</span>
+            </div>
+        </div>
+
+        <!-- Camera Permission Error Screen -->
+        <div id="cameraErrorState" class="hidden absolute inset-0 z-40 bg-zinc-950/95 flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+                <i data-lucide="camera-off" class="w-8 h-8"></i>
+            </div>
+            <h2 class="text-xl font-bold mb-2 text-white">Camera Access Required</h2>
+            <p id="errorMessage" class="text-sm text-zinc-400 max-w-xs mb-6">Please enable camera permissions to capture photos with PMO-WLB stamp.</p>
+            <button id="retryCameraBtn" class="px-6 py-3 bg-zinc-100 text-zinc-950 font-semibold rounded-xl active:scale-95 transition-all shadow-lg">
+                Grant / Retry Access
+            </button>
+        </div>
+    </main>
+
+    <!-- Bottom Controls -->
+    <footer class="relative z-20 py-4 pb-6 px-6 glass-panel border-t-0 rounded-t-3xl flex items-center justify-around shrink-0">
+        <button id="openGalleryBtn" class="w-12 h-12 rounded-2xl border-2 border-zinc-700/60 overflow-hidden bg-zinc-900 flex items-center justify-center transition-all active:scale-90">
+            <i data-lucide="image" class="w-6 h-6 text-zinc-500" id="galleryIcon"></i>
+            <img id="galleryThumb" class="w-full h-full object-cover hidden" alt="Last capture thumbnail">
+        </button>
+
+        <button id="shutterBtn" class="relative group flex items-center justify-center focus:outline-none" aria-label="Take Photo">
+            <div class="w-16 h-16 rounded-full border-4 border-white/90 flex items-center justify-center transition-transform active:scale-90 shadow-2xl">
+                <div class="w-12 h-12 rounded-full bg-white group-active:bg-amber-400 transition-colors"></div>
+            </div>
+        </button>
+
+        <button id="toggleBadgeBtn" class="w-12 h-12 rounded-2xl glass-button flex items-center justify-center text-amber-400 transition-all">
+            <i data-lucide="stamp" class="w-6 h-6"></i>
+        </button>
+    </footer>
+
+    <!-- Watermark Settings Drawer -->
+    <div id="settingsDrawer" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none flex flex-col justify-end">
+        <div class="bg-zinc-900 border-t border-zinc-800 rounded-t-3xl p-6 transition-transform duration-300 transform translate-y-full flex flex-col gap-4 max-w-lg mx-auto w-full max-h-[85dvh] overflow-y-auto" id="drawerContent">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5 text-amber-400"></i>
+                    Watermark Settings
+                </h3>
+                <button id="closeSettingsBtn" class="p-2 rounded-full text-zinc-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Custom Stamp Text Input -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Stamp Text</label>
+                <input type="text" id="stampTextInput" value="PMO-WLB" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-semibold focus:outline-none focus:border-amber-400 transition-colors" placeholder="Enter stamp text">
+            </div>
+
+            <!-- Sub-Category Selection -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sub-Category (Below PMO-WLB)</label>
+                <select id="categorySelect" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 font-bold focus:outline-none focus:border-amber-400 transition-colors">
+                    <option value="BIOMETRIC">BIOMETRIC</option>
+                    <option value="RECORDS TS">RECORDS TS</option>
+                    <option value="FIN DIS TS">FIN DIS TS</option>
+                    <option value="FIN COLL TS">FIN COLL TS</option>
+                    <option value="HARBOUR TS">HARBOUR TS</option>
+                    <option value="HARBOUR ENC. TS">HARBOUR ENC. TS</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Stamp Text Size</label>
+                    <span id="stampSizeVal" class="text-xs font-bold text-amber-400">16px</span>
+                </div>
+                <input type="range" id="stampSizeInput" min="12" max="36" value="16" class="w-full accent-amber-400 bg-zinc-800 h-2 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Timestamp Date Size</label>
+                    <span id="dateSizeVal" class="text-xs font-bold text-amber-400">11px</span>
+                </div>
+                <input type="range" id="dateSizeInput" min="10" max="28" value="11" class="w-full accent-amber-400 bg-zinc-800 h-2 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Position Buttons with Center Top Option -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Position</label>
+                <div class="grid grid-cols-5 gap-1.5">
+                    <button data-pos="top-left" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-L</button>
+                    <button data-pos="top-center" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-C</button>
+                    <button data-pos="top-right" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-R</button>
+                    <button data-pos="bottom-left" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Bot-L</button>
+                    <button data-pos="bottom-right" class="pos-btn py-2 rounded-xl border border-amber-400 bg-amber-400/10 text-[11px] font-semibold text-amber-400">Bot-R</button>
+                </div>
+            </div>
+
+            <!-- Color Palette -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Badge Accent Color</label>
+                <div class="flex items-center gap-3 py-1">
+                    <button data-color="#fbbf24" class="color-btn active-color w-9 h-9 rounded-full bg-amber-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
+                    <button data-color="#38bdf8" class="color-btn w-9 h-9 rounded-full bg-sky-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
+                    <button data-color="#4ade80" class="color-btn w-9 h-9 rounded-full bg-green-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
+                    <button data-color="#f43f5e" class="color-btn w-9 h-9 rounded-full bg-rose-500 transition-all border-2 border-zinc-900 focus:outline-none"></button>
+                    <button data-color="#ffffff" class="color-btn w-9 h-9 rounded-full bg-white transition-all border-2 border-zinc-900 focus:outline-none"></button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-zinc-800">
+                <span class="text-sm font-medium text-zinc-200">Include Timestamp</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="timestampToggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-400"></div>
+                </label>
+            </div>
+
+            <button id="applySettingsBtn" class="w-full mt-2 py-3 bg-amber-400 text-zinc-950 font-bold rounded-xl active:scale-98 transition-all">
+                Save Preferences
+            </button>
+        </div>
+    </div>
+
+    <!-- Photo Preview Modal -->
+    <div id="previewModal" class="fixed inset-0 z-50 bg-black flex flex-col hidden">
+        <div class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel border-b-0 shrink-0">
+            <button id="retakeBtn" class="flex items-center gap-1.5 text-zinc-300 hover:text-white text-sm font-medium glass-button px-3.5 py-2 rounded-xl">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Back to Camera
+            </button>
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Photo Saved</span>
+            <div class="w-16"></div>
+        </div>
+
+        <div class="flex-1 w-full h-full flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden relative">
+            <img id="stampedImageResult" class="max-w-full max-h-[75dvh] object-contain rounded-2xl shadow-2xl border border-zinc-800" alt="Stamped Capture">
+        </div>
+    </div>
+
+    <canvas id="photoCanvas" class="hidden"></canvas>
+
+    <script>
+        let currentStream = null;
+        let facingMode = 'environment';
+        let isWatermarkEnabled = true;
+        let stampText = 'PMO-WLB';
+        let categoryText = 'BIOMETRIC';
+        let stampFontSize = 16;
+        let dateFontSize = 11;
+        let badgePosition = 'bottom-right';
+        let badgeColor = '#fbbf24';
+        let showTimestamp = true;
+        let audioContext = null;
+        let currentBlob = null;
+
+        const cameraFeed = document.getElementById('cameraFeed');
+        const shutterBtn = document.getElementById('shutterBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const shutterOverlay = document.getElementById('shutterOverlay');
+        const cameraErrorState = document.getElementById('cameraErrorState');
+        const errorMessage = document.getElementById('errorMessage');
+        const retryCameraBtn = document.getElementById('retryCameraBtn');
+        
+        const liveOverlayBadge = document.getElementById('liveOverlayBadge');
+        const badgeTag = document.getElementById('badgeTag');
+        const badgeCategory = document.getElementById('badgeCategory');
+        const badgeTimestamp = document.getElementById('badgeTimestamp');
+        const toggleBadgeBtn = document.getElementById('toggleBadgeBtn');
+
+        const styleSettingsBtn = document.getElementById('styleSettingsBtn');
+        const settingsDrawer = document.getElementById('settingsDrawer');
+        const drawerContent = document.getElementById('drawerContent');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const applySettingsBtn = document.getElementById('applySettingsBtn');
+        const stampTextInput = document.getElementById('stampTextInput');
+        const categorySelect = document.getElementById('categorySelect');
+        const stampSizeInput = document.getElementById('stampSizeInput');
+        const dateSizeInput = document.getElementById('dateSizeInput');
+        const stampSizeVal = document.getElementById('stampSizeVal');
+        const dateSizeVal = document.getElementById('dateSizeVal');
+        const timestampToggle = document.getElementById('timestampToggle');
+
+        const previewModal = document.getElementById('previewModal');
+        const stampedImageResult = document.getElementById('stampedImageResult');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const openGalleryBtn = document.getElementById('openGalleryBtn');
+        const galleryThumb = document.getElementById('galleryThumb');
+        const galleryIcon = document.getElementById('galleryIcon');
+        const photoCanvas = document.getElementById('photoCanvas');
+
+        async function requestNativePermissions() {
+            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+                try {
+                    if (Capacitor.Plugins.Camera) {
+                        await Capacitor.Plugins.Camera.requestPermissions();
+                    }
+                    if (Capacitor.Plugins.Filesystem) {
+                        await Capacitor.Plugins.Filesystem.requestPermissions();
+                    }
+                } catch (err) {
+                    console.warn("Native permission request failed:", err);
+                }
+            }
+        }
+
+        function playShutterSound() {
+            try {
+                if (!audioContext) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) audioContext = new AudioContextClass();
+                }
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                if (!audioContext) return;
+
+                const now = audioContext.currentTime;
+                const bufferSize = audioContext.sampleRate * 0.08;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(1000, now);
+
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+
+                noise.start(now);
+            } catch (err) {
+                console.warn("Audio error", err);
+            }
+        }
+
+        async function startCamera() {
+            await requestNativePermissions();
+
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const constraints = {
+                audio: false,
+                video: {
+                    facingMode: facingMode,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+
+            try {
+                cameraErrorState.classList.add('hidden');
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+                cameraFeed.srcObject = stream;
+                
+                if (facingMode === 'user') {
+                    cameraFeed.style.transform = 'scaleX(-1)';
+                } else {
+                    cameraFeed.style.transform = 'scaleX(1)';
+                }
+            } catch (error) {
+                console.error("Camera error:", error);
+                cameraErrorState.classList.remove('hidden');
+            }
+        }
+
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateLiveClock() {
+            if (badgeTimestamp && showTimestamp) {
+                badgeTimestamp.textContent = getFormattedTimestamp();
+            }
+        }
+        setInterval(updateLiveClock, 1000);
+        updateLiveClock();
+
+        function updateLiveBadgeUI() {
+            if (!isWatermarkEnabled) {
+                liveOverlayBadge.classList.add('hidden');
+                return;
+            }
+            liveOverlayBadge.classList.remove('hidden');
+
+            badgeTag.textContent = stampText || 'PMO-WLB';
+            badgeTag.style.color = badgeColor;
+            badgeTag.style.fontSize = `${stampFontSize}px`;
+
+            badgeCategory.textContent = categoryText;
+            badgeCategory.style.fontSize = `${Math.max(stampFontSize - 3, 11)}px`;
+
+            badgeTimestamp.style.fontSize = `${dateFontSize}px`;
+
+            if (showTimestamp) {
+                badgeTimestamp.classList.remove('hidden');
+            } else {
+                badgeTimestamp.classList.add('hidden');
+            }
+
+            // Set positioning based on user choice
+            liveOverlayBadge.className = 'absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw] ';
+            switch (badgePosition) {
+                case 'top-left':
+                    liveOverlayBadge.className += 'top-6 left-6';
+                    break;
+                case 'top-center':
+                    liveOverlayBadge.className += 'top-6 left-1/2 -translate-x-1/2';
+                    break;
+                case 'top-right':
+                    liveOverlayBadge.className += 'top-6 right-6';
+                    break;
+                case 'bottom-left':
+                    liveOverlayBadge.className += 'bottom-6 left-6';
+                    break;
+                case 'bottom-right':
+                default:
+                    liveOverlayBadge.className += 'bottom-6 right-6';
+                    break;
+            }
+        }
+
+        function processAndStampPhoto() {
+            if (!cameraFeed.videoWidth) return;
+
+            const videoWidth = cameraFeed.videoWidth;
+            const videoHeight = cameraFeed.videoHeight;
+
+            photoCanvas.width = videoWidth;
+            photoCanvas.height = videoHeight;
+
+            const ctx = photoCanvas.getContext('2d');
+
+            if (facingMode === 'user') {
+                ctx.translate(videoWidth, 0);
+                ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(cameraFeed, 0, 0, videoWidth, videoHeight);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            if (isWatermarkEnabled) {
+                const nowStr = getFormattedTimestamp();
+                const mainText = stampText || 'PMO-WLB';
+                const catText = categoryText;
+
+                const scaleFactor = Math.min(videoWidth, videoHeight) / 600;
+                
+                const calcStampSize = Math.max(stampFontSize * scaleFactor, 16);
+                const calcCatSize = Math.max((stampFontSize - 3) * scaleFactor, 12);
+                const calcDateSize = Math.max(dateFontSize * scaleFactor, 10);
+
+                const paddingX = 18 * scaleFactor;
+                const paddingY = 12 * scaleFactor;
+                const borderRadius = 12 * scaleFactor;
+                const margin = 28 * scaleFactor;
+
+                // Dynamically measure longest text to calculate exact container size
+                ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
+                const textWidth = ctx.measureText(mainText).width;
+                
+                ctx.font = `700 ${calcCatSize}px Inter, sans-serif`;
+                const catWidth = ctx.measureText(catText).width;
+
+                ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
+                const subTextWidth = showTimestamp ? ctx.measureText(nowStr).width : 0;
+
+                const maxContentWidth = Math.max(textWidth, catWidth, subTextWidth);
+                const cardWidth = maxContentWidth + (paddingX * 2);
+                
+                let cardHeight = calcStampSize + calcCatSize + (paddingY * 2.2);
+                if (showTimestamp) {
+                    cardHeight += calcDateSize + (4 * scaleFactor);
+                }
+
+                let x = margin;
+                let y = margin;
+
+                if (badgePosition === 'top-center') {
+                    x = (videoWidth - cardWidth) / 2;
+                    y = margin;
+                } else {
+                    if (badgePosition.includes('right')) {
+                        x = videoWidth - cardWidth - margin;
+                    }
+                    if (badgePosition.includes('bottom')) {
+                        y = videoHeight - cardHeight - margin;
+                    }
+                }
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                ctx.shadowBlur = 12 * scaleFactor;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 4 * scaleFactor;
+
+                ctx.beginPath();
+                ctx.roundRect(x, y, cardWidth, cardHeight, borderRadius);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1.5 * scaleFactor;
+                ctx.stroke();
+
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+
+                const centerX = x + (cardWidth / 2);
+                let currentY = y + paddingY;
+
+                // 1. Draw PMO-WLB (Main Text)
+                ctx.fillStyle = badgeColor;
+                ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
+                ctx.fillText(mainText, centerX, currentY);
+                currentY += calcStampSize + (3 * scaleFactor);
+
+                // 2. Draw Sub-category Text Below PMO-WLB
+                ctx.fillStyle = '#f4f4f5';
+                ctx.font = `700 ${calcCatSize}px Inter, sans-serif`;
+                ctx.fillText(catText, centerX, currentY);
+                currentY += calcCatSize + (4 * scaleFactor);
+
+                // 3. Draw Timestamp
+                if (showTimestamp) {
+                    ctx.fillStyle = '#e4e4e7';
+                    ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
+                    ctx.fillText(nowStr, centerX, currentY);
+                }
+
+                ctx.restore();
+            }
+
+            const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.92);
+            stampedImageResult.src = dataUrl;
+
+            galleryThumb.src = dataUrl;
+            galleryThumb.classList.remove('hidden');
+            galleryIcon.classList.add('hidden');
+
+            photoCanvas.toBlob((blob) => {
+                currentBlob = blob;
+                handleDirectSave();
+            }, 'image/jpeg', 0.92);
+        }
+
+        function triggerShutter() {
+            playShutterSound();
+
+            shutterOverlay.classList.remove('shutter-effect');
+            void shutterOverlay.offsetWidth;
+            shutterOverlay.classList.add('shutter-effect');
+
+            setTimeout(() => {
+                processAndStampPhoto();
+            }, 100);
+        }
+
+        async function handleDirectSave() {
+            if (!currentBlob) return;
+
+            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+                const reader = new FileReader();
+                reader.readAsDataURL(currentBlob);
+                reader.onloadend = async () => {
+                    const base64Data = reader.result;
+                    const fileName = `PMO-WLB_${Date.now()}.jpg`;
+
+                    try {
+                        await Capacitor.Plugins.Filesystem.writeFile({
+                            path: `Pictures/${fileName}`,
+                            data: base64Data,
+                            directory: 'EXTERNAL_STORAGE'
+                        });
+                        console.log('Saved directly to Photos!');
+                    } catch (err) {
+                        console.error('Error saving silently:', err);
+                    }
+                };
+            } else {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(currentBlob);
+                downloadLink.download = `PMO-WLB_${Date.now()}.jpg`;
+                downloadLink.click();
+            }
+        }
+
+        shutterBtn.addEventListener('click', triggerShutter);
+
+        switchCameraBtn.addEventListener('click', () => {
+            facingMode = facingMode === 'environment' ? 'user' : 'environment';
+            startCamera();
+        });
+
+        toggleBadgeBtn.addEventListener('click', () => {
+            isWatermarkEnabled = !isWatermarkEnabled;
+            toggleBadgeBtn.style.color = isWatermarkEnabled ? badgeColor : '#71717a';
+            updateLiveBadgeUI();
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+        });
+
+        openGalleryBtn.addEventListener('click', () => {
+            if (stampedImageResult.src) {
+                previewModal.classList.remove('hidden');
+            }
+        });
+
+        retryCameraBtn.addEventListener('click', startCamera);
+
+        function openSettings() {
+            settingsDrawer.classList.remove('opacity-0', 'pointer-events-none');
+            drawerContent.classList.remove('translate-y-full');
+        }
+
+        function closeSettings() {
+            drawerContent.classList.add('translate-y-full');
+            settingsDrawer.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        styleSettingsBtn.addEventListener('click', openSettings);
+        closeSettingsBtn.addEventListener('click', closeSettings);
+        settingsDrawer.addEventListener('click', (e) => {
+            if (e.target === settingsDrawer) closeSettings();
+        });
+
+        stampTextInput.addEventListener('input', (e) => {
+            stampText = e.target.value;
+            updateLiveBadgeUI();
+        });
+
+        categorySelect.addEventListener('change', (e) => {
+            categoryText = e.target.value;
+            updateLiveBadgeUI();
+        });
+
+        stampSizeInput.addEventListener('input', (e) => {
+            stampFontSize = parseInt(e.target.value, 10);
+            stampSizeVal.textContent = `${stampFontSize}px`;
+            updateLiveBadgeUI();
+        });
+
+        dateSizeInput.addEventListener('input', (e) => {
+            dateFontSize = parseInt(e.target.value, 10);
+            dateSizeVal.textContent = `${dateFontSize}px`;
+            updateLiveBadgeUI();
+        });
+
+        document.querySelectorAll('.pos-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pos-btn').forEach(b => {
+                    b.classList.remove('border-amber-400', 'bg-amber-400/10', 'text-amber-400');
+                    b.classList.add('border-zinc-700', 'text-zinc-300');
+                });
+                btn.classList.remove('border-zinc-700', 'text-zinc-300');
+                btn.classList.add('border-amber-400', 'bg-amber-400/10', 'text-amber-400');
+                badgePosition = btn.dataset.pos;
+                updateLiveBadgeUI();
+            });
+        });
+
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active-color'));
+                btn.classList.add('active-color');
+                badgeColor = btn.dataset.color;
+                toggleBadgeBtn.style.color = badgeColor;
+                updateLiveBadgeUI();
+            });
+        });
+
+        timestampToggle.addEventListener('change', (e) => {
+            showTimestamp = e.target.checked;
+            updateLiveBadgeUI();
+        });
+
+        applySettingsBtn.addEventListener('click', closeSettings);
+
+        window.addEventListener('load', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            updateLiveBadgeUI();
+            startCamera();
+        });
+    </script>
+</body>
+</html>
