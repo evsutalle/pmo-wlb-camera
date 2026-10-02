@@ -17,10 +17,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Sync Capacitor
         run: |
-          npm ci || npm install
+          npm install
+          npx cap add ios || true
           npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install
 
       - name: Build iOS App
         run: |
