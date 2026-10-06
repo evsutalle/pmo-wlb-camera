@@ -3,5 +3,8 @@
 	"appName": "PMO WLB Camera",
 	"webDir": "www",
 	"bundledWebRuntime": false,
-	"packageClassList": []
+	"packageClassList": [
+		"CAPCameraPlugin",
+		"FilesystemPlugin"
+	]
 }

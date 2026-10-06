@@ -17,9 +17,7 @@
             color: #f4f4f5;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-touch-callout: default;
         }
-
         html, body {
             height: 100dvh;
             width: 100vw;
@@ -27,42 +25,22 @@
             margin: 0;
             padding: 0;
         }
-
-        @keyframes shutterFlash {
-            0% { opacity: 0; }
-            50% { opacity: 0.95; }
-            100% { opacity: 0; }
-        }
-
-        .shutter-effect {
-            animation: shutterFlash 0.25s ease-out;
-        }
-
-        #cameraFeed {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-        }
-
         .glass-panel {
-            background: rgba(24, 24, 27, 0.75);
+            background: rgba(24, 24, 27, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         .glass-button {
             background: rgba(39, 39, 42, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        
         .glass-button:active {
             transform: scale(0.94);
             background: rgba(63, 63, 70, 0.9);
         }
-
         .color-btn.active-color {
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 12px rgba(251, 191, 36, 0.6);
             transform: scale(1.1);
@@ -72,55 +50,46 @@
 <body class="bg-zinc-950 text-zinc-100 flex flex-col h-[100dvh] w-screen overflow-hidden antialiased">
 
     <!-- Header Controls -->
-    <header class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel border-b-0 rounded-b-2xl shrink-0">
+    <header class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel shrink-0">
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" id="cameraStatusDot"></div>
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
             <span class="text-xs font-semibold uppercase tracking-widest text-zinc-300">PMO-WLB Cam</span>
         </div>
-        
         <div class="flex items-center gap-3">
-            <button id="styleSettingsBtn" class="glass-button p-2.5 rounded-full text-zinc-200 hover:text-white transition-all" aria-label="Overlay Settings">
+            <button id="styleSettingsBtn" class="glass-button p-2.5 rounded-full text-zinc-200">
                 <i data-lucide="sliders" class="w-5 h-5"></i>
-            </button>
-            <button id="switchCameraBtn" class="glass-button p-2.5 rounded-full text-zinc-200 hover:text-white transition-all" aria-label="Switch Camera">
-                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
             </button>
         </div>
     </header>
 
-    <!-- Camera Viewport Section -->
-    <main class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
-        <video id="cameraFeed" autoplay playsinline muted class="w-full h-full object-cover transition-transform duration-300"></video>
-
-        <div id="shutterOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-30"></div>
-
-        <!-- Live Badge Overlay -->
-        <div id="liveOverlayBadge" class="absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw]">
-            <div class="inline-flex flex-col items-center justify-center text-center px-4 py-2 rounded-xl bg-black/65 backdrop-blur-md border border-white/20 shadow-2xl transition-all" id="badgeContainer">
-                <span id="badgeTag" class="text-amber-400 font-extrabold uppercase tracking-wider drop-shadow whitespace-nowrap leading-tight" style="font-size: 16px;">PMO-WLB</span>
-                <span id="badgeCategory" class="font-bold text-zinc-200 tracking-wide uppercase mt-0.5 whitespace-nowrap leading-tight" style="font-size: 12px;">BIOMETRIC</span>
-                <span id="badgeTimestamp" class="font-medium text-zinc-300 tracking-tight mt-0.5 whitespace-nowrap leading-tight" style="font-size: 11px;">2026-10-02 13:54:14</span>
+    <!-- Main Capture Screen -->
+    <main class="relative flex-1 w-full h-full bg-zinc-900 flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-sm rounded-3xl p-6 glass-panel flex flex-col items-center text-center gap-6 shadow-2xl">
+            <div class="w-20 h-20 rounded-full bg-amber-400/10 border-2 border-amber-400/30 flex items-center justify-center text-amber-400">
+                <i data-lucide="camera" class="w-10 h-10"></i>
             </div>
+            
+            <div>
+                <h2 class="text-xl font-bold text-white">Capture & Stamp Photo</h2>
+                <p class="text-xs text-zinc-400 mt-1">Tap below to open native device camera, apply custom watermark badge, and auto-save directly to Photos.</p>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="w-full p-4 bg-black/60 rounded-2xl border border-white/10 text-left space-y-1">
+                <div class="text-[10px] uppercase font-bold text-zinc-500">Live Badge Preview</div>
+                <div class="inline-flex flex-col items-center justify-center text-center px-3 py-1.5 rounded-xl bg-black/80 border border-white/20 mt-1">
+                    <span id="badgeTag" class="font-extrabold uppercase tracking-wider text-amber-400 text-sm">PMO-WLB</span>
+                    <span id="badgeCategory" class="font-bold text-zinc-200 tracking-wide text-xs">BIOMETRIC</span>
+                    <span id="badgeTimestamp" class="font-medium text-zinc-300 text-[10px]">2026-10-06 16:55:00</span>
+                </div>
+            </div>
+
+            <button id="nativeCaptureBtn" class="w-full py-4 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-extrabold rounded-2xl shadow-lg active:scale-95 transition-all text-base flex items-center justify-center gap-2">
+                <i data-lucide="aperture" class="w-5 h-5"></i>
+                Take Photo
+            </button>
         </div>
     </main>
-
-    <!-- Bottom Controls -->
-    <footer class="relative z-20 py-4 pb-6 px-6 glass-panel border-t-0 rounded-t-3xl flex items-center justify-around shrink-0">
-        <button id="openGalleryBtn" class="w-12 h-12 rounded-2xl border-2 border-zinc-700/60 overflow-hidden bg-zinc-900 flex items-center justify-center transition-all active:scale-90">
-            <i data-lucide="image" class="w-6 h-6 text-zinc-500" id="galleryIcon"></i>
-            <img id="galleryThumb" class="w-full h-full object-cover hidden" alt="Last capture thumbnail">
-        </button>
-
-        <button id="shutterBtn" class="relative group flex items-center justify-center focus:outline-none" aria-label="Take Photo">
-            <div class="w-16 h-16 rounded-full border-4 border-white/90 flex items-center justify-center transition-transform active:scale-90 shadow-2xl">
-                <div class="w-12 h-12 rounded-full bg-white group-active:bg-amber-400 transition-colors"></div>
-            </div>
-        </button>
-
-        <button id="toggleBadgeBtn" class="w-12 h-12 rounded-2xl glass-button flex items-center justify-center text-amber-400 transition-all">
-            <i data-lucide="stamp" class="w-6 h-6"></i>
-        </button>
-    </footer>
 
     <!-- Watermark Settings Drawer -->
     <div id="settingsDrawer" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none flex flex-col justify-end">
@@ -137,12 +106,12 @@
 
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Stamp Text</label>
-                <input type="text" id="stampTextInput" value="PMO-WLB" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-semibold focus:outline-none focus:border-amber-400 transition-colors" placeholder="Enter stamp text">
+                <input type="text" id="stampTextInput" value="PMO-WLB" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-semibold focus:outline-none focus:border-amber-400">
             </div>
 
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sub-Category</label>
-                <select id="categorySelect" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 font-bold focus:outline-none focus:border-amber-400 transition-colors">
+                <select id="categorySelect" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 font-bold focus:outline-none focus:border-amber-400">
                     <option value="BIOMETRIC">BIOMETRIC</option>
                     <option value="RECORDS TS">RECORDS TS</option>
                     <option value="FIN DIS TS">FIN DIS TS</option>
@@ -152,53 +121,7 @@
                 </select>
             </div>
 
-            <div class="flex flex-col gap-1.5">
-                <div class="flex justify-between items-center">
-                    <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Stamp Text Size</label>
-                    <span id="stampSizeVal" class="text-xs font-bold text-amber-400">16px</span>
-                </div>
-                <input type="range" id="stampSizeInput" min="12" max="36" value="16" class="w-full accent-amber-400 bg-zinc-800 h-2 rounded-lg appearance-none cursor-pointer">
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-                <div class="flex justify-between items-center">
-                    <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Timestamp Date Size</label>
-                    <span id="dateSizeVal" class="text-xs font-bold text-amber-400">11px</span>
-                </div>
-                <input type="range" id="dateSizeInput" min="10" max="28" value="11" class="w-full accent-amber-400 bg-zinc-800 h-2 rounded-lg appearance-none cursor-pointer">
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Position</label>
-                <div class="grid grid-cols-5 gap-1.5">
-                    <button data-pos="top-left" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-L</button>
-                    <button data-pos="top-center" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-C</button>
-                    <button data-pos="top-right" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Top-R</button>
-                    <button data-pos="bottom-left" class="pos-btn py-2 rounded-xl border border-zinc-700 text-[11px] font-semibold text-zinc-300 hover:border-amber-400">Bot-L</button>
-                    <button data-pos="bottom-right" class="pos-btn py-2 rounded-xl border border-amber-400 bg-amber-400/10 text-[11px] font-semibold text-amber-400">Bot-R</button>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Badge Accent Color</label>
-                <div class="flex items-center gap-3 py-1">
-                    <button data-color="#fbbf24" class="color-btn active-color w-9 h-9 rounded-full bg-amber-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
-                    <button data-color="#38bdf8" class="color-btn w-9 h-9 rounded-full bg-sky-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
-                    <button data-color="#4ade80" class="color-btn w-9 h-9 rounded-full bg-green-400 transition-all border-2 border-zinc-900 focus:outline-none"></button>
-                    <button data-color="#f43f5e" class="color-btn w-9 h-9 rounded-full bg-rose-500 transition-all border-2 border-zinc-900 focus:outline-none"></button>
-                    <button data-color="#ffffff" class="color-btn w-9 h-9 rounded-full bg-white transition-all border-2 border-zinc-900 focus:outline-none"></button>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-2 border-t border-zinc-800">
-                <span class="text-sm font-medium text-zinc-200">Include Timestamp</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="timestampToggle" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-400"></div>
-                </label>
-            </div>
-
-            <button id="applySettingsBtn" class="w-full mt-2 py-3 bg-amber-400 text-zinc-950 font-bold rounded-xl active:scale-98 transition-all">
+            <button id="applySettingsBtn" class="w-full mt-2 py-3 bg-amber-400 text-zinc-950 font-bold rounded-xl active:scale-98">
                 Save Preferences
             </button>
         </div>
@@ -206,16 +129,15 @@
 
     <!-- Photo Preview Modal -->
     <div id="previewModal" class="fixed inset-0 z-50 bg-black flex flex-col hidden">
-        <div class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel border-b-0 shrink-0">
-            <button id="retakeBtn" class="flex items-center gap-1.5 text-zinc-300 hover:text-white text-sm font-medium glass-button px-3.5 py-2 rounded-xl">
+        <div class="relative z-20 flex items-center justify-between p-4 px-6 glass-panel shrink-0">
+            <button id="retakeBtn" class="flex items-center gap-1.5 text-zinc-300 text-sm font-medium glass-button px-3.5 py-2 rounded-xl">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                Back to Camera
+                Back
             </button>
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Photo Saved</span>
-            <div class="w-16"></div>
+            <span id="saveStatusText" class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Saved to Photos</span>
+            <div class="w-12"></div>
         </div>
-
-        <div class="flex-1 w-full h-full flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden relative">
+        <div class="flex-1 w-full flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
             <img id="stampedImageResult" class="max-w-full max-h-[75dvh] object-contain rounded-2xl shadow-2xl border border-zinc-800" alt="Stamped Capture">
         </div>
     </div>
@@ -223,29 +145,14 @@
     <canvas id="photoCanvas" class="hidden"></canvas>
 
     <script>
-        let currentStream = null;
-        let facingMode = 'environment';
-        let isWatermarkEnabled = true;
         let stampText = 'PMO-WLB';
         let categoryText = 'BIOMETRIC';
-        let stampFontSize = 16;
-        let dateFontSize = 11;
-        let badgePosition = 'bottom-right';
-        let badgeColor = '#fbbf24';
-        let showTimestamp = true;
-        let audioContext = null;
 
-        const cameraFeed = document.getElementById('cameraFeed');
-        const shutterBtn = document.getElementById('shutterBtn');
-        const switchCameraBtn = document.getElementById('switchCameraBtn');
-        const shutterOverlay = document.getElementById('shutterOverlay');
-        
-        const liveOverlayBadge = document.getElementById('liveOverlayBadge');
+        const nativeCaptureBtn = document.getElementById('nativeCaptureBtn');
         const badgeTag = document.getElementById('badgeTag');
         const badgeCategory = document.getElementById('badgeCategory');
         const badgeTimestamp = document.getElementById('badgeTimestamp');
-        const toggleBadgeBtn = document.getElementById('toggleBadgeBtn');
-
+        
         const styleSettingsBtn = document.getElementById('styleSettingsBtn');
         const settingsDrawer = document.getElementById('settingsDrawer');
         const drawerContent = document.getElementById('drawerContent');
@@ -253,88 +160,12 @@
         const applySettingsBtn = document.getElementById('applySettingsBtn');
         const stampTextInput = document.getElementById('stampTextInput');
         const categorySelect = document.getElementById('categorySelect');
-        const stampSizeInput = document.getElementById('stampSizeInput');
-        const dateSizeInput = document.getElementById('dateSizeInput');
-        const stampSizeVal = document.getElementById('stampSizeVal');
-        const dateSizeVal = document.getElementById('dateSizeVal');
-        const timestampToggle = document.getElementById('timestampToggle');
 
         const previewModal = document.getElementById('previewModal');
         const stampedImageResult = document.getElementById('stampedImageResult');
         const retakeBtn = document.getElementById('retakeBtn');
-        const openGalleryBtn = document.getElementById('openGalleryBtn');
-        const galleryThumb = document.getElementById('galleryThumb');
-        const galleryIcon = document.getElementById('galleryIcon');
+        const saveStatusText = document.getElementById('saveStatusText');
         const photoCanvas = document.getElementById('photoCanvas');
-
-        async function startCamera() {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
-
-            const videoConstraints = {
-                facingMode: { exact: facingMode },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            };
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
-                currentStream = stream;
-                cameraFeed.srcObject = stream;
-                cameraFeed.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
-            } catch (err) {
-                try {
-                    // Fallback constraint if exact facingMode fails
-                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: false });
-                    currentStream = fallbackStream;
-                    cameraFeed.srcObject = fallbackStream;
-                    cameraFeed.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
-                } catch (e) {
-                    console.error("Camera access failed: ", e);
-                }
-            }
-        }
-
-        function playShutterSound() {
-            try {
-                if (!audioContext) {
-                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                    if (AudioContextClass) audioContext = new AudioContextClass();
-                }
-                if (audioContext && audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                if (!audioContext) return;
-
-                const now = audioContext.currentTime;
-                const bufferSize = audioContext.sampleRate * 0.08;
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-
-                const filter = audioContext.createBiquadFilter();
-                filter.type = 'highpass';
-                filter.frequency.setValueAtTime(1000, now);
-
-                const gain = audioContext.createGain();
-                gain.gain.setValueAtTime(0.6, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
-
-                noise.start(now);
-            } catch (err) {
-                console.warn("Audio error", err);
-            }
-        }
 
         function getFormattedTimestamp() {
             const now = new Date();
@@ -347,311 +178,171 @@
             return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
 
-        function updateLiveClock() {
-            if (badgeTimestamp && showTimestamp) {
-                badgeTimestamp.textContent = getFormattedTimestamp();
-            }
-        }
-        setInterval(updateLiveClock, 1000);
-        updateLiveClock();
+        setInterval(() => {
+            if (badgeTimestamp) badgeTimestamp.textContent = getFormattedTimestamp();
+        }, 1000);
 
-        function updateLiveBadgeUI() {
-            if (!isWatermarkEnabled) {
-                liveOverlayBadge.classList.add('hidden');
-                return;
-            }
-            liveOverlayBadge.classList.remove('hidden');
-
-            badgeTag.textContent = stampText || 'PMO-WLB';
-            badgeTag.style.color = badgeColor;
-            badgeTag.style.fontSize = `${stampFontSize}px`;
-
+        function updateUI() {
+            badgeTag.textContent = stampText;
             badgeCategory.textContent = categoryText;
-            badgeCategory.style.fontSize = `${Math.max(stampFontSize - 3, 11)}px`;
+        }
 
-            badgeTimestamp.style.fontSize = `${dateFontSize}px`;
+        async function takePhotoNative() {
+            try {
+                // Access native Capacitor Camera plugin
+                const Camera = window.Capacitor?.Plugins?.Camera;
+                
+                if (!Camera) {
+                    alert('Capacitor Camera Plugin is not loaded. Ensure @capacitor/camera is installed.');
+                    return;
+                }
 
-            if (showTimestamp) {
-                badgeTimestamp.classList.remove('hidden');
-            } else {
-                badgeTimestamp.classList.add('hidden');
-            }
+                const photo = await Camera.getPhoto({
+                    quality: 90,
+                    allowEditing: false,
+                    resultType: 'dataUrl',
+                    source: 'CAMERA'
+                });
 
-            liveOverlayBadge.className = 'absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw] ';
-            switch (badgePosition) {
-                case 'top-left':
-                    liveOverlayBadge.className += 'top-6 left-6';
-                    break;
-                case 'top-center':
-                    liveOverlayBadge.className += 'top-6 left-1/2 -translate-x-1/2';
-                    break;
-                case 'top-right':
-                    liveOverlayBadge.className += 'top-6 right-6';
-                    break;
-                case 'bottom-left':
-                    liveOverlayBadge.className += 'bottom-6 left-6';
-                    break;
-                case 'bottom-right':
-                default:
-                    liveOverlayBadge.className += 'bottom-6 right-6';
-                    break;
+                if (photo && photo.dataUrl) {
+                    await applyStampAndSave(photo.dataUrl);
+                }
+            } catch (err) {
+                console.error("Camera Error: ", err);
             }
         }
 
-        async function processAndStampPhoto() {
-            if (!cameraFeed.videoWidth) return;
+        async function applyStampAndSave(dataUrl) {
+            const img = new Image();
+            img.onload = async () => {
+                photoCanvas.width = img.width;
+                photoCanvas.height = img.height;
 
-            const videoWidth = cameraFeed.videoWidth;
-            const videoHeight = cameraFeed.videoHeight;
+                const ctx = photoCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
 
-            photoCanvas.width = videoWidth;
-            photoCanvas.height = videoHeight;
-
-            const ctx = photoCanvas.getContext('2d');
-
-            if (facingMode === 'user') {
-                ctx.translate(videoWidth, 0);
-                ctx.scale(-1, 1);
-            }
-
-            ctx.drawImage(cameraFeed, 0, 0, videoWidth, videoHeight);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-            if (isWatermarkEnabled) {
-                const nowStr = getFormattedTimestamp();
-                const mainText = stampText || 'PMO-WLB';
-                const catText = categoryText;
-
-                const scaleFactor = Math.min(videoWidth, videoHeight) / 600;
+                // Draw Badge
+                const timestampStr = getFormattedTimestamp();
+                const scaleFactor = Math.min(img.width, img.height) / 600;
                 
-                const calcStampSize = Math.max(stampFontSize * scaleFactor, 16);
-                const calcCatSize = Math.max((stampFontSize - 3) * scaleFactor, 12);
-                const calcDateSize = Math.max(dateFontSize * scaleFactor, 10);
+                const calcStampSize = Math.max(18 * scaleFactor, 18);
+                const calcCatSize = Math.max(14 * scaleFactor, 14);
+                const calcDateSize = Math.max(12 * scaleFactor, 12);
 
                 const paddingX = 18 * scaleFactor;
                 const paddingY = 12 * scaleFactor;
-                const borderRadius = 12 * scaleFactor;
                 const margin = 28 * scaleFactor;
 
                 ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
-                const textWidth = ctx.measureText(mainText).width;
+                const textWidth = ctx.measureText(stampText).width;
                 
                 ctx.font = `700 ${calcCatSize}px Inter, sans-serif`;
-                const catWidth = ctx.measureText(catText).width;
+                const catWidth = ctx.measureText(categoryText).width;
 
                 ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
-                const subTextWidth = showTimestamp ? ctx.measureText(nowStr).width : 0;
+                const subTextWidth = ctx.measureText(timestampStr).width;
 
                 const maxContentWidth = Math.max(textWidth, catWidth, subTextWidth);
                 const cardWidth = maxContentWidth + (paddingX * 2);
-                
-                let cardHeight = calcStampSize + calcCatSize + (paddingY * 2.2);
-                if (showTimestamp) {
-                    cardHeight += calcDateSize + (4 * scaleFactor);
-                }
+                const cardHeight = calcStampSize + calcCatSize + calcDateSize + (paddingY * 2.2);
 
-                let x = margin;
-                let y = margin;
+                const x = img.width - cardWidth - margin;
+                const y = img.height - cardHeight - margin;
 
-                if (badgePosition === 'top-center') {
-                    x = (videoWidth - cardWidth) / 2;
-                    y = margin;
-                } else {
-                    if (badgePosition.includes('right')) {
-                        x = videoWidth - cardWidth - margin;
-                    }
-                    if (badgePosition.includes('bottom')) {
-                        y = videoHeight - cardHeight - margin;
-                    }
-                }
-
-                ctx.save();
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                ctx.shadowBlur = 12 * scaleFactor;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 4 * scaleFactor;
-
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.beginPath();
-                ctx.roundRect(x, y, cardWidth, cardHeight, borderRadius);
+                ctx.roundRect(x, y, cardWidth, cardHeight, 12 * scaleFactor);
                 ctx.fill();
 
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.lineWidth = 1.5 * scaleFactor;
                 ctx.stroke();
 
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                ctx.shadowBlur = 4;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
-
                 const centerX = x + (cardWidth / 2);
                 let currentY = y + paddingY;
 
-                ctx.fillStyle = badgeColor;
+                ctx.fillStyle = '#fbbf24';
                 ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
-                ctx.fillText(mainText, centerX, currentY);
+                ctx.fillText(stampText, centerX, currentY);
                 currentY += calcStampSize + (3 * scaleFactor);
 
                 ctx.fillStyle = '#f4f4f5';
                 ctx.font = `700 ${calcCatSize}px Inter, sans-serif`;
-                ctx.fillText(catText, centerX, currentY);
+                ctx.fillText(categoryText, centerX, currentY);
                 currentY += calcCatSize + (4 * scaleFactor);
 
-                if (showTimestamp) {
-                    ctx.fillStyle = '#e4e4e7';
-                    ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
-                    ctx.fillText(nowStr, centerX, currentY);
-                }
+                ctx.fillStyle = '#e4e4e7';
+                ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
+                ctx.fillText(timestampStr, centerX, currentY);
 
-                ctx.restore();
-            }
-
-            const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.92);
-            stampedImageResult.src = dataUrl;
-
-            galleryThumb.src = dataUrl;
-            galleryThumb.classList.remove('hidden');
-            galleryIcon.classList.add('hidden');
-
-            saveImageToPhotos(dataUrl);
-        }
-
-        async function saveImageToPhotos(base64Data) {
-            // Check for Web Share API to trigger native iOS photo saving options
-            if (navigator.share) {
-                try {
-                    const blob = await (await fetch(base64Data)).blob();
-                    const file = new File([blob], `PMO-WLB_${Date.now()}.jpg`, { type: 'image/jpeg' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'PMO-WLB Photo',
-                            text: 'Stamped Photo'
-                        });
-                        return;
-                    }
-                } catch (err) {
-                    console.log('Share dismissed or unavailable', err);
-                }
-            }
-
-            // Fallback download anchor for web browsers
-            const downloadLink = document.createElement('a');
-            downloadLink.href = base64Data;
-            downloadLink.download = `PMO-WLB_${Date.now()}.jpg`;
-            downloadLink.click();
-        }
-
-        function triggerShutter() {
-            playShutterSound();
-
-            shutterOverlay.classList.remove('shutter-effect');
-            void shutterOverlay.offsetWidth;
-            shutterOverlay.classList.add('shutter-effect');
-
-            setTimeout(() => {
-                processAndStampPhoto();
-            }, 100);
-        }
-
-        shutterBtn.addEventListener('click', triggerShutter);
-
-        switchCameraBtn.addEventListener('click', () => {
-            facingMode = facingMode === 'environment' ? 'user' : 'environment';
-            startCamera();
-        });
-
-        toggleBadgeBtn.addEventListener('click', () => {
-            isWatermarkEnabled = !isWatermarkEnabled;
-            toggleBadgeBtn.style.color = isWatermarkEnabled ? badgeColor : '#71717a';
-            updateLiveBadgeUI();
-        });
-
-        retakeBtn.addEventListener('click', () => {
-            previewModal.classList.add('hidden');
-        });
-
-        openGalleryBtn.addEventListener('click', () => {
-            if (stampedImageResult.src) {
+                const stampedDataUrl = photoCanvas.toDataURL('image/jpeg', 0.92);
+                stampedImageResult.src = stampedDataUrl;
                 previewModal.classList.remove('hidden');
-            }
-        });
 
-        function openSettings() {
+                // Save natively to iOS Photo Gallery
+                saveToGallery(stampedDataUrl);
+            };
+            img.src = dataUrl;
+        }
+
+        async function saveToGallery(base64Data) {
+            try {
+                const Filesystem = window.Capacitor?.Plugins?.Filesystem;
+                if (!Filesystem) {
+                    saveStatusText.textContent = "Saved Preview Only";
+                    saveStatusText.className = "text-xs font-semibold uppercase tracking-wider text-amber-400";
+                    return;
+                }
+
+                const fileName = `PMO-WLB_${Date.now()}.jpg`;
+                const pureBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
+
+                await Filesystem.writeFile({
+                    path: fileName,
+                    data: pureBase64,
+                    directory: 'DOCUMENTS'
+                });
+
+                saveStatusText.textContent = "Saved to Device";
+                saveStatusText.className = "text-xs font-semibold uppercase tracking-wider text-emerald-400";
+            } catch (e) {
+                console.error("Save failed:", e);
+                saveStatusText.textContent = "Save Failed";
+                saveStatusText.className = "text-xs font-semibold uppercase tracking-wider text-rose-400";
+            }
+        }
+
+        nativeCaptureBtn.addEventListener('click', takePhotoNative);
+        retakeBtn.addEventListener('click', () => previewModal.classList.add('hidden'));
+
+        styleSettingsBtn.addEventListener('click', () => {
             settingsDrawer.classList.remove('opacity-0', 'pointer-events-none');
             drawerContent.classList.remove('translate-y-full');
-        }
+        });
 
         function closeSettings() {
             drawerContent.classList.add('translate-y-full');
             settingsDrawer.classList.add('opacity-0', 'pointer-events-none');
         }
 
-        styleSettingsBtn.addEventListener('click', openSettings);
         closeSettingsBtn.addEventListener('click', closeSettings);
-        settingsDrawer.addEventListener('click', (e) => {
-            if (e.target === settingsDrawer) closeSettings();
-        });
+        applySettingsBtn.addEventListener('click', closeSettings);
 
         stampTextInput.addEventListener('input', (e) => {
             stampText = e.target.value;
-            updateLiveBadgeUI();
+            updateUI();
         });
 
         categorySelect.addEventListener('change', (e) => {
             categoryText = e.target.value;
-            updateLiveBadgeUI();
+            updateUI();
         });
-
-        stampSizeInput.addEventListener('input', (e) => {
-            stampFontSize = parseInt(e.target.value, 10);
-            stampSizeVal.textContent = `${stampFontSize}px`;
-            updateLiveBadgeUI();
-        });
-
-        dateSizeInput.addEventListener('input', (e) => {
-            dateFontSize = parseInt(e.target.value, 10);
-            dateSizeVal.textContent = `${dateFontSize}px`;
-            updateLiveBadgeUI();
-        });
-
-        document.querySelectorAll('.pos-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.pos-btn').forEach(b => {
-                    b.classList.remove('border-amber-400', 'bg-amber-400/10', 'text-amber-400');
-                    b.classList.add('border-zinc-700', 'text-zinc-300');
-                });
-                btn.classList.remove('border-zinc-700', 'text-zinc-300');
-                btn.classList.add('border-amber-400', 'bg-amber-400/10', 'text-amber-400');
-                badgePosition = btn.dataset.pos;
-                updateLiveBadgeUI();
-            });
-        });
-
-        document.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active-color'));
-                btn.classList.add('active-color');
-                badgeColor = btn.dataset.color;
-                toggleBadgeBtn.style.color = badgeColor;
-                updateLiveBadgeUI();
-            });
-        });
-
-        timestampToggle.addEventListener('change', (e) => {
-            showTimestamp = e.target.checked;
-            updateLiveBadgeUI();
-        });
-
-        applySettingsBtn.addEventListener('click', closeSettings);
 
         window.addEventListener('load', () => {
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-            updateLiveBadgeUI();
-            startCamera();
+            if (window.lucide) lucide.createIcons();
+            updateUI();
         });
     </script>
 </body>
