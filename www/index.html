@@ -103,18 +103,6 @@
                 <span id="badgeTimestamp" class="font-medium text-zinc-300 tracking-tight mt-0.5 whitespace-nowrap leading-tight" style="font-size: 11px;">2026-10-02 13:54:14</span>
             </div>
         </div>
-
-        <!-- Camera Permission Error Screen -->
-        <div id="cameraErrorState" class="hidden absolute inset-0 z-40 bg-zinc-950/95 flex flex-col items-center justify-center p-6 text-center">
-            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-                <i data-lucide="camera-off" class="w-8 h-8"></i>
-            </div>
-            <h2 class="text-xl font-bold mb-2 text-white">Camera Access Required</h2>
-            <p id="errorMessage" class="text-sm text-zinc-400 max-w-xs mb-6">Please enable camera permissions to capture photos with PMO-WLB stamp.</p>
-            <button id="retryCameraBtn" class="px-6 py-3 bg-zinc-100 text-zinc-950 font-semibold rounded-xl active:scale-95 transition-all shadow-lg">
-                Grant / Retry Access
-            </button>
-        </div>
     </main>
 
     <!-- Bottom Controls -->
@@ -257,9 +245,6 @@
         const shutterBtn = document.getElementById('shutterBtn');
         const switchCameraBtn = document.getElementById('switchCameraBtn');
         const shutterOverlay = document.getElementById('shutterOverlay');
-        const cameraErrorState = document.getElementById('cameraErrorState');
-        const errorMessage = document.getElementById('errorMessage');
-        const retryCameraBtn = document.getElementById('retryCameraBtn');
         
         const liveOverlayBadge = document.getElementById('liveOverlayBadge');
         const badgeTag = document.getElementById('badgeTag');
@@ -360,7 +345,6 @@
             };
 
             try {
-                cameraErrorState.classList.add('hidden');
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 currentStream = stream;
                 cameraFeed.srcObject = stream;
@@ -371,8 +355,7 @@
                     cameraFeed.style.transform = 'scaleX(1)';
                 }
             } catch (error) {
-                console.error("Camera error:", error);
-                cameraErrorState.classList.remove('hidden');
+                console.error("Camera stream error:", error);
             }
         }
 
@@ -628,8 +611,6 @@
                 previewModal.classList.remove('hidden');
             }
         });
-
-        retryCameraBtn.addEventListener('click', startCamera);
 
         function openSettings() {
             settingsDrawer.classList.remove('opacity-0', 'pointer-events-none');
