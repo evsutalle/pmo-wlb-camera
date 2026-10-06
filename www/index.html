@@ -63,7 +63,6 @@
             background: rgba(63, 63, 70, 0.9);
         }
 
-        /* Active highlight ring for color picker */
         .color-btn.active-color {
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 12px rgba(251, 191, 36, 0.6);
             transform: scale(1.1);
@@ -95,7 +94,7 @@
 
         <div id="shutterOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none z-30"></div>
 
-        <!-- Live Badge Overlay (Auto-sizing inline container) -->
+        <!-- Live Badge Overlay -->
         <div id="liveOverlayBadge" class="absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw]">
             <div class="inline-flex flex-col items-center justify-center text-center px-4 py-2 rounded-xl bg-black/65 backdrop-blur-md border border-white/20 shadow-2xl transition-all" id="badgeContainer">
                 <span id="badgeTag" class="text-amber-400 font-extrabold uppercase tracking-wider drop-shadow whitespace-nowrap leading-tight" style="font-size: 16px;">PMO-WLB</span>
@@ -136,15 +135,13 @@
                 </button>
             </div>
 
-            <!-- Custom Stamp Text Input -->
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Stamp Text</label>
                 <input type="text" id="stampTextInput" value="PMO-WLB" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white font-semibold focus:outline-none focus:border-amber-400 transition-colors" placeholder="Enter stamp text">
             </div>
 
-            <!-- Sub-Category Selection -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sub-Category (Below PMO-WLB)</label>
+                <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sub-Category</label>
                 <select id="categorySelect" class="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-amber-400 font-bold focus:outline-none focus:border-amber-400 transition-colors">
                     <option value="BIOMETRIC">BIOMETRIC</option>
                     <option value="RECORDS TS">RECORDS TS</option>
@@ -171,7 +168,6 @@
                 <input type="range" id="dateSizeInput" min="10" max="28" value="11" class="w-full accent-amber-400 bg-zinc-800 h-2 rounded-lg appearance-none cursor-pointer">
             </div>
 
-            <!-- Position Buttons with Center Top Option -->
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Position</label>
                 <div class="grid grid-cols-5 gap-1.5">
@@ -183,7 +179,6 @@
                 </div>
             </div>
 
-            <!-- Color Palette -->
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Badge Accent Color</label>
                 <div class="flex items-center gap-3 py-1">
@@ -239,7 +234,6 @@
         let badgeColor = '#fbbf24';
         let showTimestamp = true;
         let audioContext = null;
-        let currentBlob = null;
 
         const cameraFeed = document.getElementById('cameraFeed');
         const shutterBtn = document.getElementById('shutterBtn');
@@ -273,17 +267,31 @@
         const galleryIcon = document.getElementById('galleryIcon');
         const photoCanvas = document.getElementById('photoCanvas');
 
-        async function requestNativePermissions() {
-            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const videoConstraints = {
+                facingMode: { exact: facingMode },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+                currentStream = stream;
+                cameraFeed.srcObject = stream;
+                cameraFeed.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+            } catch (err) {
                 try {
-                    if (Capacitor.Plugins.Camera) {
-                        await Capacitor.Plugins.Camera.requestPermissions();
-                    }
-                    if (Capacitor.Plugins.Filesystem) {
-                        await Capacitor.Plugins.Filesystem.requestPermissions();
-                    }
-                } catch (err) {
-                    console.warn("Native permission request failed:", err);
+                    // Fallback constraint if exact facingMode fails
+                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: false });
+                    currentStream = fallbackStream;
+                    cameraFeed.srcObject = fallbackStream;
+                    cameraFeed.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+                } catch (e) {
+                    console.error("Camera access failed: ", e);
                 }
             }
         }
@@ -328,37 +336,6 @@
             }
         }
 
-        async function startCamera() {
-            await requestNativePermissions();
-
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
-
-            const constraints = {
-                audio: false,
-                video: {
-                    facingMode: facingMode,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                }
-            };
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                currentStream = stream;
-                cameraFeed.srcObject = stream;
-                
-                if (facingMode === 'user') {
-                    cameraFeed.style.transform = 'scaleX(-1)';
-                } else {
-                    cameraFeed.style.transform = 'scaleX(1)';
-                }
-            } catch (error) {
-                console.error("Camera stream error:", error);
-            }
-        }
-
         function getFormattedTimestamp() {
             const now = new Date();
             const year = now.getFullYear();
@@ -400,7 +377,6 @@
                 badgeTimestamp.classList.add('hidden');
             }
 
-            // Set positioning based on user choice
             liveOverlayBadge.className = 'absolute z-10 pointer-events-none transition-all duration-200 max-w-[90vw] ';
             switch (badgePosition) {
                 case 'top-left':
@@ -422,7 +398,7 @@
             }
         }
 
-        function processAndStampPhoto() {
+        async function processAndStampPhoto() {
             if (!cameraFeed.videoWidth) return;
 
             const videoWidth = cameraFeed.videoWidth;
@@ -457,7 +433,6 @@
                 const borderRadius = 12 * scaleFactor;
                 const margin = 28 * scaleFactor;
 
-                // Dynamically measure longest text to calculate exact container size
                 ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
                 const textWidth = ctx.measureText(mainText).width;
                 
@@ -513,19 +488,16 @@
                 const centerX = x + (cardWidth / 2);
                 let currentY = y + paddingY;
 
-                // 1. Draw PMO-WLB (Main Text)
                 ctx.fillStyle = badgeColor;
                 ctx.font = `800 ${calcStampSize}px Inter, sans-serif`;
                 ctx.fillText(mainText, centerX, currentY);
                 currentY += calcStampSize + (3 * scaleFactor);
 
-                // 2. Draw Sub-category Text Below PMO-WLB
                 ctx.fillStyle = '#f4f4f5';
                 ctx.font = `700 ${calcCatSize}px Inter, sans-serif`;
                 ctx.fillText(catText, centerX, currentY);
                 currentY += calcCatSize + (4 * scaleFactor);
 
-                // 3. Draw Timestamp
                 if (showTimestamp) {
                     ctx.fillStyle = '#e4e4e7';
                     ctx.font = `500 ${calcDateSize}px Inter, sans-serif`;
@@ -542,10 +514,33 @@
             galleryThumb.classList.remove('hidden');
             galleryIcon.classList.add('hidden');
 
-            photoCanvas.toBlob((blob) => {
-                currentBlob = blob;
-                handleDirectSave();
-            }, 'image/jpeg', 0.92);
+            saveImageToPhotos(dataUrl);
+        }
+
+        async function saveImageToPhotos(base64Data) {
+            // Check for Web Share API to trigger native iOS photo saving options
+            if (navigator.share) {
+                try {
+                    const blob = await (await fetch(base64Data)).blob();
+                    const file = new File([blob], `PMO-WLB_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'PMO-WLB Photo',
+                            text: 'Stamped Photo'
+                        });
+                        return;
+                    }
+                } catch (err) {
+                    console.log('Share dismissed or unavailable', err);
+                }
+            }
+
+            // Fallback download anchor for web browsers
+            const downloadLink = document.createElement('a');
+            downloadLink.href = base64Data;
+            downloadLink.download = `PMO-WLB_${Date.now()}.jpg`;
+            downloadLink.click();
         }
 
         function triggerShutter() {
@@ -558,35 +553,6 @@
             setTimeout(() => {
                 processAndStampPhoto();
             }, 100);
-        }
-
-        async function handleDirectSave() {
-            if (!currentBlob) return;
-
-            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-                const reader = new FileReader();
-                reader.readAsDataURL(currentBlob);
-                reader.onloadend = async () => {
-                    const base64Data = reader.result;
-                    const fileName = `PMO-WLB_${Date.now()}.jpg`;
-
-                    try {
-                        await Capacitor.Plugins.Filesystem.writeFile({
-                            path: `Pictures/${fileName}`,
-                            data: base64Data,
-                            directory: 'EXTERNAL_STORAGE'
-                        });
-                        console.log('Saved directly to Photos!');
-                    } catch (err) {
-                        console.error('Error saving silently:', err);
-                    }
-                };
-            } else {
-                const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(currentBlob);
-                downloadLink.download = `PMO-WLB_${Date.now()}.jpg`;
-                downloadLink.click();
-            }
         }
 
         shutterBtn.addEventListener('click', triggerShutter);
