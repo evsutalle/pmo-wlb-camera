@@ -17,23 +17,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Sync SPM
         run: |
           npm install
           chmod -R +x node_modules/.bin/
           npx cap add ios || true
-          npx cap sync ios
-
-      - name: Install CocoaPods
-        run: |
-          cd ios/App
-          pod install
+          npx cap sync ios --packagemanager SPM
 
       - name: Build iOS App Archive
         run: |
           cd ios/App
           xcodebuild archive \
-            -workspace App.xcworkspace \
+            -project App.xcodeproj \
             -scheme App \
             -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive \
