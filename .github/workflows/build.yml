@@ -29,7 +29,7 @@ jobs:
           cd ios/App
           pod install
 
-      - name: Build iOS App
+      - name: Build iOS App Archive
         run: |
           cd ios/App
           xcodebuild archive \
@@ -42,7 +42,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package into IPA
         run: |
