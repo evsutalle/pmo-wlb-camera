@@ -15,19 +15,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: Install Dependencies
         run: |
-          npm install
-          chmod -R +x node_modules/.bin/
+          npm ci || npm install
           npx cap add ios || true
           npx cap sync ios
 
       - name: Install CocoaPods
         run: |
           cd ios/App
-          pod install --repo-update
+          pod install
 
       - name: Build iOS App
         run: |
@@ -41,9 +40,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=YES \
-            SUPPORTS_MACCATALYST=NO
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package into IPA
         run: |
