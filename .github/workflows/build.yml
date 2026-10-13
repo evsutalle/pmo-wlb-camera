@@ -17,12 +17,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies & Sync SPM
+      - name: Install Dependencies & Sync
         run: |
           npm install
           chmod -R +x node_modules/.bin/
-          npx cap add ios || true
-          npx cap sync ios --packagemanager SPM
+          npx cap sync ios
 
       - name: Build iOS App Archive
         run: |
