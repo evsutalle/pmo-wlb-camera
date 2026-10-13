@@ -27,7 +27,7 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd ios/App
-          pod install
+          COCOAPODS_DISABLE_KEYS=1 pod install
 
       - name: Build iOS App
         run: |
@@ -38,11 +38,13 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -archivePath build/App.xcarchive \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM="" \
-            COMPILER_INDEX_STORE_ENABLE=NO
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_ENTITLEMENTS="" \
+            CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=YES
 
       - name: Package into IPA
         run: |
