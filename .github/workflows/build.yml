@@ -24,9 +24,11 @@ jobs:
           npx cap add ios || true
           npx cap sync ios
 
-      - name: Install CocoaPods
+      - name: Setup CocoaPods & Minimum Deployment Target
         run: |
           cd ios/App
+          # Ensure iOS deployment target is at least 13.0 for Capacitor 6+ plugins
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' App.xcodeproj/project.pbxproj || true
           pod install
 
       - name: Build iOS App
@@ -41,6 +43,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=13.0 \
             COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package into IPA
