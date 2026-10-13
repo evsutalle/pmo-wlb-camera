@@ -27,7 +27,7 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd ios/App
-          pod install
+          pod install --repo-update
 
       - name: Build iOS App
         run: |
@@ -38,10 +38,11 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -archivePath build/App.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            COMPILER_INDEX_STORE_ENABLE=NO
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
       - name: Package into IPA
         run: |
