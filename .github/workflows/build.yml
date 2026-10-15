@@ -17,10 +17,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies & Sync
+      - name: Clean & Re-add Native iOS Project
         run: |
           npm install
           chmod -R +x node_modules/.bin/
+          # Completely purge old native project to remove duplicate Podfile/SPM links
+          rm -rf ios
+          npx cap add ios
           npx cap sync ios
 
       - name: Build iOS App Archive
