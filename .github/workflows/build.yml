@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies & Sync Native iOS
+      - name: Install Dependencies & Setup iOS
         run: |
           npm install
           chmod -R +x node_modules/.bin/
@@ -25,7 +25,14 @@ jobs:
           npx cap add ios
           npx cap sync ios
 
-      - name: Build Unsigned App Bundle
+      - name: Configure Info.plist Permissions
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Camera access is required to capture photos.'" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'Photo library access is required to save captured photos.'" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Photo library access is required to select photos.'" "$PLIST" 2>/dev/null || true
+
+      - name: Build Unsigned App
         run: |
           cd ios/App
           xcodebuild build \
@@ -36,7 +43,9 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package App into IPA
         run: |
