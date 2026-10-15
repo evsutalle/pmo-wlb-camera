@@ -17,35 +17,31 @@ jobs:
         with:
           node-version: 22
 
-      - name: Clean & Re-add Native iOS Project
+      - name: Install Dependencies & Sync Native iOS
         run: |
           npm install
           chmod -R +x node_modules/.bin/
-          # Completely purge old native project to remove duplicate Podfile/SPM links
           rm -rf ios
           npx cap add ios
           npx cap sync ios
 
-      - name: Build iOS App Archive
+      - name: Build Unsigned App Bundle
         run: |
           cd ios/App
-          xcodebuild archive \
+          xcodebuild build \
             -project App.xcodeproj \
             -scheme App \
-            -destination 'generic/platform=iOS' \
-            -archivePath build/App.xcarchive \
+            -sdk iphoneos \
             -configuration Release \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            COMPILER_INDEX_STORE_ENABLE=NO
+            CODE_SIGN_IDENTITY=""
 
-      - name: Package into IPA
+      - name: Package App into IPA
         run: |
           mkdir -p Payload
-          cp -r ios/App/build/App.xcarchive/Products/Applications/App.app Payload/
+          cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
           zip -r PMO-WLB-Camera.ipa Payload
 
       - name: Upload IPA Artifact
